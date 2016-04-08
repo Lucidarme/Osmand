@@ -267,6 +267,21 @@
    }
   },
   {
+    "testName": "15.Каширское шоссе u-turn",
+    "startPoint": {
+      "latitude": 45.66869817293356,
+      "longitude": 35.44163727760315,
+    },
+    "endPoint": {
+      "latitude": 45.66882562819617,
+      "longitude": 35.441980600357056
+    },
+    "expectedResults": {
+      "-14967": null,
+      "-14919": "+TU;C, C, C, C, C, C"
+    }
+  },
+  {
     "testName": "14.Figure 8 TL",
     "startPoint": {
       "latitude": 45.69816447596442,

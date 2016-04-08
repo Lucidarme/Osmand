@@ -5,11 +5,7 @@ import gnu.trove.set.hash.TIntHashSet;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 import net.osmand.PlatformUtil;
 import net.osmand.binary.BinaryMapIndexReader;
@@ -48,9 +44,43 @@ public class RouteResultPreparation {
 		}
 		
 		determineTurnsToMerge(ctx.leftSideNavigation, result);
+		justifyUTurnsOnSameRoad(ctx.leftSideNavigation, result);
 		justifyUTurns(ctx.leftSideNavigation, result);
 		addTurnInfoDescriptions(result);
 		return result;
+	}
+
+	private boolean isSameRoad(RouteDataObject x, RouteDataObject y) {
+		return (x.id == y.id) || (Objects.equals(x.getName(), y.getName()));
+	}
+
+	private boolean isUTurnByAngle(RouteSegmentResult x, RouteSegmentResult y) {
+		double uTurnAngle = 150;
+		double angle = MapUtils.degreesDiff(x.getBearingEnd(), y.getBearingBegin());
+		return Math.abs(angle) > uTurnAngle;
+	}
+
+	private void justifyUTurnsOnSameRoad(boolean leftSide, List<RouteSegmentResult> result) {
+		// leftSide is unused. How?
+		double uTurnDistance = 400;
+		double distance = 0;
+		RouteSegmentResult lastThroughSegment = result.get(0);
+		for (int i = 1; i < result.size(); i++) {
+			RouteSegmentResult segment = result.get(i);
+			distance += segment.getDistance();
+			if (distance >= uTurnDistance ||
+					segment.getTurnType() == null || TurnType.C == segment.getTurnType().getValue()) {
+				distance = 0;
+				lastThroughSegment = segment;
+			} else if (lastThroughSegment != null && isSameRoad(lastThroughSegment.getObject(), segment.getObject()) &&
+					isUTurnByAngle(lastThroughSegment, segment)) {
+				int iUTurn = result.indexOf(lastThroughSegment) + 1;
+				result.get(iUTurn).setTurnType(TurnType.valueOf(TurnType.TU, false));
+				for (int j = iUTurn + 1; j < i; j++) {
+					result.get(j).getTurnType().setSkipToSpeak(true);
+				}
+			}
+		}
 	}
 
 	private void justifyUTurns(boolean leftSide, List<RouteSegmentResult> result) {
